@@ -1,0 +1,61 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "BLAS-LAPACK-AppStore-Workaround",
+        "repositoryURL": "https://github.com/kewlbear/BLAS-LAPACK-AppStore-Workaround.git",
+        "state": {
+          "branch": "main",
+          "revision": "dc78ff05b3c8c1c39d83aab9bdbaef59dc6c87f5",
+          "version": null
+        }
+      },
+      {
+        "package": "LAPACKE-iOS",
+        "repositoryURL": "https://github.com/kewlbear/LAPACKE-iOS.git",
+        "state": {
+          "branch": "main",
+          "revision": "6fbd386ff1cbde8ee6cbf83d2d398d21f8e4474d",
+          "version": null
+        }
+      },
+      {
+        "package": "NumPy-iOS",
+        "repositoryURL": "https://github.com/kewlbear/NumPy-iOS.git",
+        "state": {
+          "branch": "main",
+          "revision": "c27e79ea5485f5b727aaaf330635f7d423513100",
+          "version": null
+        }
+      },
+      {
+        "package": "Open3D-iOS",
+        "repositoryURL": "https://github.com/kewlbear/Open3D-iOS.git",
+        "state": {
+          "branch": "main",
+          "revision": "d8bfd1a51e7bbdcab1cd94c9d6aebed9ff0243fc",
+          "version": null
+        }
+      },
+      {
+        "package": "Python-iOS",
+        "repositoryURL": "https://github.com/kewlbear/Python-iOS.git",
+        "state": {
+          "branch": "3.8_kivy-ios",
+          "revision": "f5333228b625560a90c17d9e2d3a9b2aac6967a9",
+          "version": null
+        }
+      },
+      {
+        "package": "PythonKit",
+        "repositoryURL": "https://github.com/pvieito/PythonKit",
+        "state": {
+          "branch": "master",
+          "revision": "839ef68d9fe5c85ab212272fffbe54e229374d5c",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
