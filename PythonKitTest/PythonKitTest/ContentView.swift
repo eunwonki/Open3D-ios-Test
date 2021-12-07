@@ -6,11 +6,30 @@
 //
 
 import SwiftUI
+import SceneKit
 
 struct ContentView: View {
+    @StateObject var model = Model()
+    
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        SceneView(scene: model.scene, options: [.allowsCameraControl])
+            .onAppear(perform: {
+                model.set()
+            })
+        Button(action: model.original)
+        {
+            Text("original")
+                .background(Color.purple)
+                .font(.title)
+                .padding()
+        }
+        Button(action: model.globalRegister)
+        {
+            Text("global register")
+                .background(Color.purple)
+                .font(.title)
+                .padding()
+        }
     }
 }
 

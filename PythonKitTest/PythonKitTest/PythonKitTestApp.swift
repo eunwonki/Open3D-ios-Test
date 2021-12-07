@@ -17,67 +17,88 @@ import LinkPython
 
 @main
 struct PythonKitTestApp: App {
-    @StateObject var model = Model()
-    
     var body: some Scene {
         WindowGroup {
-            SceneView(scene: model.scene, options: [.allowsCameraControl])
-                .onAppear(perform: {
-                    model.set()
-                })
+            ContentView()
         }
     }
     
     init() {
-        PythonSupport.initialize()
-        Open3DSupport.sitePackagesURL.insertPythonPath()
-        NumPySupport.sitePackagesURL.insertPythonPath()
+        pythonInit()
     }
 }
 
 class Model: ObservableObject {
     var scene = makeScene()
-    var tstate: UnsafeMutableRawPointer?
     
-    func set() {
-        let o3d = Python.import("open3d")
-        let np = Python.import("numpy")
+    var target: SCNNode!
+    var source: SCNNode!
+    
+    var targetPc: PythonObject!
+    var sourcePc: PythonObject!
+    
+    var targetPcDownSampled: PythonObject!
+    var sourcePcDownSampled: PythonObject!
+    
+    var targetPcFpfh: PythonObject!
+    var sourcePcFpfh: PythonObject!
+    
+    let voxelSize: Float = 0.005
+    
+    func original() {
+        source.transform = SCNMatrix4Identity
+    }
+    
+    func globalRegister() {
+        let result = globalRegistration(source: sourcePcDownSampled,
+                                        target: targetPcDownSampled,
+                                        sourceFpfh: sourcePcFpfh,
+                                        targetFpfh: targetPcFpfh,
+                                        voxelSize: voxelSize)
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            let gstate = PyGILState_Ensure()
-            defer {
-                DispatchQueue.main.async {
-                    guard let tstate = self.tstate else { fatalError() }
-                    PyEval_RestoreThread(tstate)
-                    self.tstate = nil
-                }
-                PyGILState_Release(gstate)
+        var m: [Float] = []
+        _ = np.asarray(result.transformation).map { ma in
+            _ = np.asarray(ma).map { mb in
+                m.append(Float(mb)!)
             }
-
-            let url = Bundle.main.url(forResource: "scene",
-                                      withExtension: "ply")!
-            let pcd = o3d.io.read_point_cloud(url.path)
-        
-            let points = np.asarray(pcd.points)
-            let vertices = points.map { point in
-                SCNVector3(Float(point[0])!, Float(point[1])!, Float(point[2])!)
-            }
-            let geometrySource = SCNGeometrySource(vertices: vertices)
-            let indices: [CInt] = Array(0 ..< CInt(vertices.count))
-            let geometryElement = SCNGeometryElement(indices: indices, primitiveType: .point)
-            let geometry = SCNGeometry(sources: [geometrySource], elements: [geometryElement])
-            let node = SCNNode(geometry: geometry)
-            node.geometry?.firstMaterial!.diffuse.contents = UIColor.red
-            self.scene.rootNode.addChildNode(node)
-                    
-            let cameraNode = SCNNode()
-            cameraNode.camera = SCNCamera()
-            self.scene.rootNode.addChildNode(cameraNode)
-            cameraNode.position = SCNVector3Make(0, 0, 1)
-            cameraNode.look(at: node.geometry!.boundingSphere.center)
         }
         
-        tstate = PyEval_SaveThread()
+        m.withUnsafeMutableBytes { ptr in
+            var matrix = GLKMatrix4MakeWithArray(ptr.baseAddress?.assumingMemoryBound(to: Float.self))
+            matrix = GLKMatrix4Transpose(matrix)
+            source.transform = SCNMatrix4FromGLKMatrix4(matrix)
+        }
+    }
+    
+    func set() {
+        targetPc = pcd(filename: "scene", withExtension: "ply")
+        target = node(filename: "scene", withExtension: "ply")
+        target.geometry?.firstMaterial?.diffuse.contents = UIColor.green
+        sourcePc = pcd(filename: "model", withExtension: "ply")
+        source = node(filename: "model", withExtension: "ply")
+        source.geometry?.firstMaterial?.diffuse.contents = UIColor.yellow
+        
+        self.scene.rootNode.addChildNode(target)
+        self.scene.rootNode.addChildNode(source)
+        
+        setCamera(target: target)
+        
+        (targetPcDownSampled,
+             targetPcFpfh) = preprocessPointCloud(pcd: targetPc,
+                                                  voxelSize: voxelSize)
+        (sourcePcDownSampled,
+             sourcePcFpfh) = preprocessPointCloud(pcd: sourcePc,
+                                                  voxelSize: voxelSize)
+    }
+    
+    func setCamera(target: SCNNode) {
+        let cameraNode = SCNNode()
+        cameraNode.camera = SCNCamera()
+        self.scene.rootNode.addChildNode(cameraNode)
+        cameraNode.position = SCNVector3Make(0, 0, 1)
+        cameraNode.look(at: target.geometry!.boundingSphere.center)
+        cameraNode.camera?.zNear = 0.01
+        cameraNode.camera?.zFar = 5.0
     }
     
     static func makeScene() -> SCNScene {
